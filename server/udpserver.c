@@ -11,13 +11,18 @@
 #include <string.h>
 #include "parser.h" 
 #include "data.h"
-//#include "tcpSocket.h"
 #define BUFLEN 1024  //Max length of buffer
-#define PORT 80  //The port for incoming data
+#define PORT 3000  //The port for incoming data
 #define headerLength = 3;
 #define checksumLength = 1;
 #define validMessageLength = 13; // 3 bytes of message type + 10 bytes of data
 #define validMessageLength2 = 8;
+#define SHELLSCRIPT1 "\
+#/bin/bash \n\
+zenity --error --text='Invalid sensor'"
+#define SHELLSCRIPT2 "\
+#/bin/bash \n\
+zenity --info --title='SUCCESS' --text='Valid Sensor. Successful Integration'" 
  
 void kill(char *s)
 {
@@ -27,15 +32,12 @@ void kill(char *s)
 
 int main(void)
 {
-//udp var
     struct sockaddr_in si_me, si_other;     
     int s, i, slen = sizeof(si_other) , recv_len;
     char buf[BUFLEN];
     char *buf_parsed;
     char replay[1]; 
 
-
-    //create a UDP socket
     if ((s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
     {
         kill("socket");
@@ -77,25 +79,37 @@ int main(void)
 	//Call parser to parse buf  and print the relevant data 
 	printf("Parsing data...\n");
         buf_parsed=parser(buf, recv_len);
-        //printf("Parsed Data: %s\n", buf_parsed);
+	for (int i=0 ; i<recv_len ; i++){
+		printf("%x", buf[i]);	
+	}
+        printf("Raw Data: %x\n", buf);
 	int sensor_validate = break_data(buf_parsed);
         if (sensor_validate == 1 )
         {
-            printf("Valid sensor, sucessfull integration\n");
+            printf("Valid sensor, successful integration\n");
 	    replay[0] = 1;
+        if (sendto(s, replay, sizeof(replay), 0, (struct sockaddr*) &si_other, slen) == -1)
+        {
+            kill("sendto()");
+        }
+	 // Uncomment System call for pop-up feedback
+         //   system(SHELLSCRIPT2);
         }
         else
         {
             printf("Invalid sensor, cannot perform integration\n");
-            replay[0] = 0;
+ 	 //  replay[0] = 0;
+	// Uncomment System call for pop-up feedback
+       //     system(SHELLSCRIPT1);
 	}
-       //now reply the client with the same data
-        if (sendto(s, replay, recv_len, 0, (struct sockaddr*) &si_other, slen) == -1)
+       //now reply the client with the same data 
+	// commented out response for invalid data because of COLT issues
+/*        if (sendto(s, replay, sizeof(replay), 0, (struct sockaddr*) &si_other, slen) == -1)
         {
             kill("sendto()");
-        }
+        }*/
     }
-//tcp();     
+
     close(s);
     return 0;
 }

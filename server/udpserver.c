@@ -93,14 +93,14 @@ int main(void)
             kill("sendto()");
         }
 	 // Uncomment System call for pop-up feedback
-         //   system(SHELLSCRIPT2);
+            system(SHELLSCRIPT2);
         }
         else
         {
             printf("Invalid sensor, cannot perform integration\n");
  	 //  replay[0] = 0;
 	// Uncomment System call for pop-up feedback
-       //     system(SHELLSCRIPT1);
+            system(SHELLSCRIPT1);
 	}
        //now reply the client with the same data 
 	// commented out response for invalid data because of COLT issues
